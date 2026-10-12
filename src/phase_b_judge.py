@@ -3,7 +3,6 @@ from __future__ import annotations
 """Phase B: LLM-as-Judge — pairwise, swap-and-average, Cohen κ, bias analysis."""
 
 import json
-import math
 import os
 import sys
 from dataclasses import dataclass, field
@@ -29,52 +28,6 @@ class JudgeResult:
 
 # ─── Task 5: Pairwise Judge ───────────────────────────────────────────────────
 
-def _parse_and_validate_pairwise(content: str) -> dict:
-    data = json.loads(content)
-    if not isinstance(data, dict):
-        raise ValueError("Kết quả từ LLM Judge phải là một JSON object.")
-
-    raw_winner = data.get("winner")
-    if not isinstance(raw_winner, str):
-        raise ValueError("Trường 'winner' bị thiếu hoặc không phải chuỗi.")
-    winner_str = raw_winner.strip()
-    if winner_str.upper() == "A":
-        normalized_winner = "A"
-    elif winner_str.upper() == "B":
-        normalized_winner = "B"
-    elif winner_str.lower() == "tie":
-        normalized_winner = "tie"
-    else:
-        raise ValueError(f"Giá trị 'winner' không hợp lệ: {raw_winner}")
-
-    reasoning = data.get("reasoning")
-    if not isinstance(reasoning, str) or not reasoning.strip():
-        raise ValueError("Trường 'reasoning' phải là chuỗi không rỗng.")
-
-    scores = data.get("scores")
-    if not isinstance(scores, dict):
-        raise ValueError("Trường 'scores' bị thiếu hoặc không phải dict.")
-    if set(scores.keys()) != {"A", "B"}:
-        raise ValueError("Scores phải có đúng hai key 'A' và 'B'.")
-
-    validated_scores: dict[str, float] = {}
-    for key in ("A", "B"):
-        val = scores[key]
-        if isinstance(val, bool) or not isinstance(val, (int, float)):
-            raise ValueError(f"Điểm số của {key} phải là số, không được là bool hoặc kiểu khác.")
-        if not math.isfinite(val):
-            raise ValueError(f"Điểm số của {key} phải là số hữu hạn.")
-        if not (0.0 <= val <= 1.0):
-            raise ValueError(f"Điểm số của {key} phải nằm trong khoảng [0.0, 1.0].")
-        validated_scores[key] = float(val)
-
-    return {
-        "winner": normalized_winner,
-        "reasoning": reasoning.strip(),
-        "scores": validated_scores,
-    }
-
-
 def pairwise_judge(question: str, answer_a: str, answer_b: str, reference: str = "") -> dict:
     """Task 5: Gọi LLM để chọn answer tốt hơn (A hoặc B) theo 3 tiêu chí.
 
@@ -86,7 +39,9 @@ def pairwise_judge(question: str, answer_a: str, answer_b: str, reference: str =
     Returns:
         {"winner": "A"|"B"|"tie", "reasoning": str, "scores": {"A": float, "B": float}}
     """
+    import math
     from openai import OpenAI
+
     client = OpenAI()
 
     system_prompt = (
@@ -113,23 +68,79 @@ def pairwise_judge(question: str, answer_a: str, answer_b: str, reference: str =
         {"role": "user", "content": user_prompt},
     ]
 
-    def _call_and_validate() -> dict:
-        resp = client.chat.completions.create(
+    def _validate(content: str) -> dict:
+        try:
+            data = json.loads(content)
+        except Exception as exc:
+            raise ValueError(f"Không thể parse JSON từ kết quả judge: {exc}") from exc
+
+        if not isinstance(data, dict):
+            raise ValueError("Kết quả từ LLM Judge phải là một JSON object.")
+
+        raw_winner = data.get("winner")
+        if not isinstance(raw_winner, str):
+            raise ValueError("Trường 'winner' bị thiếu hoặc không phải chuỗi.")
+        winner_str = raw_winner.strip()
+        if winner_str.upper() == "A":
+            normalized_winner = "A"
+        elif winner_str.upper() == "B":
+            normalized_winner = "B"
+        elif winner_str.lower() == "tie":
+            normalized_winner = "tie"
+        else:
+            raise ValueError(f"Giá trị 'winner' không hợp lệ: {raw_winner}")
+
+        reasoning = data.get("reasoning")
+        if not isinstance(reasoning, str) or not reasoning.strip():
+            raise ValueError("Trường 'reasoning' phải là chuỗi không rỗng.")
+
+        scores = data.get("scores")
+        if not isinstance(scores, dict):
+            raise ValueError("Trường 'scores' bị thiếu hoặc không phải dict.")
+        if set(scores.keys()) != {"A", "B"}:
+            raise ValueError("Scores phải có đúng hai key 'A' và 'B'.")
+
+        validated_scores: dict[str, float] = {}
+        for key in ("A", "B"):
+            val = scores[key]
+            if isinstance(val, bool) or not isinstance(val, (int, float)):
+                raise ValueError(f"Điểm số của {key} phải là số, không được là bool hoặc kiểu khác.")
+            if not math.isfinite(val):
+                raise ValueError(f"Điểm số của {key} phải là số hữu hạn.")
+            if not (0.0 <= val <= 1.0):
+                raise ValueError(f"Điểm số của {key} phải nằm trong khoảng [0.0, 1.0].")
+            validated_scores[key] = float(val)
+
+        return {
+            "winner": normalized_winner,
+            "reasoning": reasoning.strip(),
+            "scores": validated_scores,
+        }
+
+    # Lời gọi 1: lỗi SDK/API không bị nuốt, truyền thẳng lên trên
+    resp = client.chat.completions.create(
+        model=JUDGE_MODEL,
+        temperature=0,
+        response_format={"type": "json_object"},
+        messages=messages,
+    )
+    content = resp.choices[0].message.content
+
+    try:
+        return _validate(content)
+    except ValueError:
+        # Retry tối đa 1 lần nếu nội dung trả về không hợp lệ
+        resp2 = client.chat.completions.create(
             model=JUDGE_MODEL,
             temperature=0,
             response_format={"type": "json_object"},
             messages=messages,
         )
-        content = resp.choices[0].message.content
-        return _parse_and_validate_pairwise(content)
-
-    try:
-        return _call_and_validate()
-    except (json.JSONDecodeError, ValueError, TypeError, KeyError) as first_err:
+        content2 = resp2.choices[0].message.content
         try:
-            return _call_and_validate()
-        except (json.JSONDecodeError, ValueError, TypeError, KeyError) as second_err:
-            raise ValueError(f"Pairwise judge output không hợp lệ sau 1 lần retry: {second_err}") from second_err
+            return _validate(content2)
+        except ValueError as second_err:
+            raise ValueError(f"Nội dung từ LLM judge không hợp lệ sau 1 lần retry: {second_err}") from second_err
 
 
 # ─── Task 6: Swap-and-Average ─────────────────────────────────────────────────
