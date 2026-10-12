@@ -1,8 +1,8 @@
 # Blueprint CI/CD cho RAG và guardrails
 
-Nhóm: {{Tên nhóm}}
+Nhóm: ThienBinh
 
-Người phụ trách: {{Họ tên và MSSV}}
+Người phụ trách: Trần Quốc Bảo Long - 2A202602696
 
 Đây là **đề xuất CI/CD**, không phải workflow đã được triển khai/chạy.
 Nguồn kết quả: artifacts/ragas_50q.json, judge_results.json, guard_results.json.

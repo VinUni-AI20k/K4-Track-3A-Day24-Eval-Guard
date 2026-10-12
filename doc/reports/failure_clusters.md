@@ -1,8 +1,8 @@
 # Phân tích lỗi Phase A
 
-Nhóm: {{Tên nhóm}}
+Nhóm: Trần Quốc Bảo Long
 
-Người phụ trách: {{Họ tên và MSSV}}
+Người phụ trách: Trần Quốc Bảo Long - 2A202602696
 
 Nguồn: `artifacts/ragas_50q.json`; run timestamp: {{created_at}}.
 Generation mode/fallback và điều kiện chạy: {{Điều kiện thực tế}}.
