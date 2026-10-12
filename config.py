@@ -45,8 +45,8 @@ GUARDRAILS_CONFIG_DIR = os.path.join(ROOT_DIR, "guardrails")
 PAIR_QUESTION_IDS = (1, 5, 12, 21, 41)
 
 # --- LLM Judge ---
-GENERATION_MODEL = "gpt-4o-mini"
-JUDGE_MODEL = "gpt-4o-mini"
+GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-3.5-flash")
+JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini-3.5-flash")
 # Day18 m5 uses OPENAI_MODEL for chunk enrichment.
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", GENERATION_MODEL)
 # Keep evaluator model IDs separate from generation and judge metadata.
