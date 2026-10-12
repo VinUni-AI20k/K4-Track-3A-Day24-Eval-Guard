@@ -17,8 +17,8 @@ Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải
 
 | STT | Họ và tên | MSSV | Vai trò / công việc thật | Bằng chứng |
 |---|---|---|---|---|
-| 1 | Nguyễn Hải Long | 2A202602471 | Trưởng nhóm; tích hợp m1–m5, môi trường, tạo 50 answers và hợp nhất các phase | commit 8c796e5, artifacts/answers_50q.json |
-| 2 | Ngô Tiến Dũng | 2A202602374 | Phase A: RAGAS Eval (Tasks 1–4) và báo cáo failure clusters | commit 06fe153, src/phase_a_ragas.py, artifacts/ragas_50q.json, doc/reports/failure_clusters.md |
+| 1 | Nguyễn Hải Long | 2A202602471 | Trưởng nhóm; tích hợp m1–m5, môi trường, tạo 50 answers và hợp nhất các phase | commits 8c796e5, 7dc08e5; artifacts/answers_50q.json |
+| 2 | Ngô Tiến Dũng | 2A202602374 | Phase A: RAGAS Eval (Tasks 1–4) và báo cáo failure clusters | commits 06fe153, 24450de; src/phase_a_ragas.py, artifacts/ragas_50q.json, doc/reports/failure_clusters.md |
 | 3 | Hoàng Anh Minh | 2A202602566 | Phase B: LLM-as-Judge (Tasks 5–8) và báo cáo bias | commit c9b4fd0, src/phase_b_judge.py, artifacts/judge_results.json, doc/reports/bias_report.md |
 
 Người tích hợp/chạy batch/nộp link: Nguyễn Hải Long tích hợp các nhánh và nộp link GitHub chung; Ngô Tiến Dũng chạy Phase A; Hoàng Anh Minh chạy Phase B.
@@ -36,7 +36,7 @@ hoặc pip resolve để khẳng định runtime đã chạy.
 ### NguyenHaiLong-2A202602471
 
 - Phần được giao và phần thực tế đã làm: Trưởng nhóm; đưa năm module RAG Day18 vào repo, sửa tương thích Qdrant client và RAGAS metadata, cấu hình phiên bản PyArrow, tạo và kiểm tra 50 answers, tích hợp các nhánh.
-- Bằng chứng: commit `8c796e5`, `src/m1_chunking.py` đến `src/m5_enrichment.py`, `artifacts/answers_50q.json` và commit tích hợp.
+- Bằng chứng: commit `8c796e5` tích hợp module Day18 và answers; merge commit `7dc08e5` tích hợp Phase B; `src/m1_chunking.py` đến `src/m5_enrichment.py`, `artifacts/answers_50q.json`.
 - Cách kiểm tra: Chạy 60 support tests offline; kiểm tra 50 ids duy nhất, phân bố 20/20/10, không thiếu answer/contexts và đối chiếu với test set.
 - Điều đã học: Phân biệt unit tests với thực nghiệm live; kiểm tra tương thích dependency và giao diện giữa pipeline Day18 với bài eval Day24.
 - Giới hạn/cách xử lý: 50 answers dùng `extractive_fallback`; cần ghi rõ giới hạn này trong báo cáo và xác nhận backend Qdrant trước khi nộp.
@@ -45,7 +45,7 @@ hoặc pip resolve để khẳng định runtime đã chạy.
 ### NgoTienDung-2A202602374
 
 - Phần được giao và phần thực tế đã làm: Hoàn thiện Phase A: hiện thực 4 hàm Task 1–4 trong src/phase_a_ragas.py (group_by_distribution, run_ragas_50q, bottom_10, cluster_analysis); cấu hình RunConfig giới hạn max_workers=2 trong src/m4_eval.py để tránh lỗi giới hạn đồng thời 402 OpenRouter; chạy thực nghiệm live trên 50 câu hỏi sinh artifacts/ragas_50q.json; điền và hoàn thiện báo cáo doc/reports/failure_clusters.md.
-- Bằng chứng: commit `06fe153`; mã nguồn tại src/phase_a_ragas.py và src/m4_eval.py; kết quả đánh giá tại artifacts/ragas_50q.json; báo cáo doc/reports/failure_clusters.md.
+- Bằng chứng: commit `06fe153` triển khai Phase A, merge commit `24450de` (PR #1); mã nguồn tại src/phase_a_ragas.py và src/m4_eval.py; kết quả đánh giá tại artifacts/ragas_50q.json; báo cáo doc/reports/failure_clusters.md.
 - Cách kiểm tra: Chạy offline pytest qua lệnh `python -m pytest tests/test_phase_a.py -v` (6/6 passed); chạy batch thực nghiệm qua `python scripts/run_experiments.py --phase a --live`; kiểm tra tính hợp lệ artifact qua `python scripts/check_lab.py`.
 - Điều đã học: Hiểu và nắm vững 4 metric cốt lõi của RAGAS (faithfulness, answer_relevancy, context_precision, context_recall); phân biệt chẩn đoán nhóm lỗi theo chất lượng (avg_score thấp nhất) thay vì số lượng câu thuần túy; hiểu về các bẫy câu hỏi adversarial (xung đột phiên bản và điều kiện phủ định); kỹ năng xử lý rate-limit và concurrency khi gọi LLM evaluators.
 - Giới hạn/cách xử lý: Khi chạy live với RAGAS mặc định 16 workers, OpenRouter báo lỗi 402 in_flight_budget_exhausted; đã khắc phục bằng cách cấu hình RunConfig(max_workers=2, max_retries=10) trong m4_eval.py.
