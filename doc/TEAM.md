@@ -18,7 +18,7 @@ Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải
 | STT | Họ và tên | MSSV | Vai trò / công việc thật | Bằng chứng |
 |---|---|---|---|---|
 | 1 | Phạm Đình Hải | 2A202602482 | Trưởng nhóm, Setup Pipeline Day 18, Phase A (RAGAS) | Nhánh `hai-phase-a` (Commit src/phase_a_ragas.py, failure_clusters.md, artifacts/ragas_50q.json) |
-| 2 | Nguyễn Minh Ngọc | 20240002 | Thành viên, Phase B (LLM Judge & Bias Calibration) | Commit src/phase_b_judge.py, bias_report.md, artifacts/judge_results.json |
+| 2 | Nguyễn Minh Ngọc | 2A202602530 | Thành viên, Phase B (LLM Judge & Bias Calibration) | Nhánh `phase-b-ngoc` (Commit src/phase_b_judge.py, bias_report.md, artifacts/judge_results.json) |
 | 3 | Nguyễn Văn Đại | 2A202602477 | Thành viên, Phase C (Guardrails Stack & Latency) | Nhánh `dai-phase-c` (Commit src/phase_c_guard.py, blueprint.md, artifacts/guard_results.json) |
 
 Người tích hợp/chạy batch/nộp link: Phạm Đình Hải, chạy check_lab.py và nộp link qua vlearn.
@@ -43,10 +43,10 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 - Giới hạn/cách xử lý: Xử lý các trường hợp context thiếu sót và tối ưu hóa việc phân bố câu hỏi chính xác.
 - Nguồn/AI hỗ trợ nếu có: Sử dụng Antigravity AI coding assistant hỗ trợ đọc hiểu đề bài và rà soát cấu trúc code; tự kiểm chứng bằng pytest và check_lab.py.
 
-### NguyenMinhNgoc-20240002
+### NguyenMinhNgoc-2A202602530
 
 - Phần được giao và phần thực tế đã làm: Phụ trách Phase B (LLM-as-a-Judge, Pairwise evaluation, Swap-and-average, Cohen's Kappa và phân tích thiên lệch trong src/phase_b_judge.py).
-- Bằng chứng: Commit mã nguồn src/phase_b_judge.py, file artifacts/judge_results.json và báo cáo doc/reports/bias_report.md.
+- Bằng chứng: Nhánh làm việc cá nhân `phase-b-ngoc`. Commit mã nguồn src/phase_b_judge.py, file artifacts/judge_results.json và báo cáo doc/reports/bias_report.md.
 - Cách kiểm tra: Chạy unit test offline pytest tests/test_phase_b.py và thực nghiệm live python scripts/run_experiments.py --phase b --live.
 - Điều đã học: Hiểu cách thức LLM chấm điểm, kỹ thuật Swap-and-Average để triệt tiêu Position Bias, đo lường Verbosity Bias và đánh giá độ tin cậy qua hệ số Cohen's Kappa với nhãn người.
 - Giới hạn/cách xử lý: Hiệu chỉnh prompt để đảm bảo JSON output ổn định và phản ánh chính xác tiêu chí đánh giá.
