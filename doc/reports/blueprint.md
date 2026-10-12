@@ -1,8 +1,9 @@
 ﻿# Blueprint CI/CD cho RAG và guardrails
 
-Nhóm: Latentia
+Nhóm: **Latentia**.
 
-Người phụ trách: Nguyễn Thị Vàng - 2A202602897
+Người tổng hợp: **Nguyễn Minh Thắng — 2A202602706** và **Nguyễn Thị Vàng — 2A202602897**.
+Phase A: Nguyễn Minh Tuấn; Phase B: Nguyễn Minh Thắng; Phase C: Nguyễn Thị Vàng.
 
 Đây là **đề xuất CI/CD**, không phải workflow đã được triển khai/chạy.
 Nguồn kết quả: artifacts/ragas_50q.json, judge_results.json, guard_results.json.
@@ -25,7 +26,7 @@ Request thực dừng sớm khi bị chặn; khác phép đo input layers chạy
    - Kiểm tra các bẫy jailbreak, prompt injection, đóng vai trái phép và các yêu cầu hoàn toàn ngoài phạm vi (`off_topic`).
    - *Failure action:* Khi `activated_rails` có `stop=True`, request dừng ngay lập tức và trả lời thông báo từ chối chính sách (định nghĩa trong `rails.co`).
 3. **Tầng 3 — RAG Pipeline (M1–M5):**
-   - Chỉ các truy vấn hợp lệ mới đi vào Retrieval (BM25 + Dense Qdrant + FlashRank Reranker) và LLM Generator để sinh câu trả lời.
+   - Chỉ truy vấn hợp lệ mới đi vào pipeline hiện có: BM25 retrieval, FlashRank reranking (có fallback lấy kết quả search khi reranker lỗi) và generator. Qdrant có thể chạy trong hạ tầng nhưng source m2 hiện chưa đủ bằng chứng rằng dense/Qdrant retrieval đã được dùng, nên đây không được ghi là tầng đã triển khai.
 4. **Tầng 4 — NeMo Output Rails:**
    - Kiểm tra câu trả lời sinh ra từ LLM; nếu vô tình tiết lộ PII, thông tin mật khẩu hoặc vi phạm chính sách bảo mật thì tự động redact/thay thế bằng câu từ chối chuẩn.
 5. **Quản lý Secrets & Fallback:**
@@ -99,7 +100,7 @@ Mốc bắt buộc lab vẫn attacks ≥15/20; bonus ≥18/20 kèm clean control
 
 ### Số liệu thực nghiệm của nhóm:
 - RAGAS mean/worst distribution: Điểm trung bình multi_hop = 0.4273 (yếu nhất), factual = 0.5979, adversarial = 0.6431.
-- Cohen’s κ: 1.0 (Đồng thuận hoàn hảo giữa LLM Judge và chuyên gia con người trên 10 câu thử nghiệm).
+- Cohen kappa: 1.0 trên đúng 10 model answers nguồn; position inconsistency 20% trên 5 cặp và longer-winner proxy 100% trên 4 cặp decisive. Tập mẫu nhỏ nên các tỷ lệ bias chỉ là tín hiệu cần theo dõi, không phải kết luận tổng quát.
 - Attacks passed: 20/20 (100.0%); clean false_positive_rate: 0.0 (0/8 bị chặn nhầm, 100% hợp lệ).
 
 ### 3 hành động cải tiến cụ thể gắn với bằng chứng:

@@ -36,7 +36,7 @@ Models generation/evaluator: Generation: gpt-4o-mini-2024-07-18; Evaluator: BAAI
 ### Đối chiếu nguyên nhân theo bằng chứng thực tế:
 - **Câu ID 1 (Factual):** Context retrieved lấy phải các đoạn về thử việc và đăng ký kết hôn không đầy đủ mệnh đề nghỉ 3 ngày. Do prompt quy định "Nếu không có thông tin thì trả lời 'Không tìm thấy'", LLM đã trả về "Không tìm thấy." → Đây là lỗi xuất phát từ Retrieval Recall (bỏ sót đoạn quan trọng), dẫn đến Faithfulness và Relevancy bị chấm 0 điểm.
 - **Câu ID 40 & ID 32 (Multi-hop):** Các câu hỏi đòi hỏi kết hợp thông tin từ 2 văn bản khác nhau (chính sách thử việc và quy trình bảo mật / đào tạo nội bộ). Do retrieval top_k=3 chỉ lấy được các đoạn rời rạc của một văn bản, context bị thiếu mất phần điều kiện của văn bản thứ hai, khiến câu trả lời không kết nối đầy đủ hai khía cạnh.
-- **Câu ID 41 (Adversarial):** Câu hỏi về số ngày phép năm có bẫy xung đột giữa 2 phiên bản tài liệu `nghi_phep_nam_v2023.md` (12 ngày) và `nghi_phep_nam_v2024.md` (14 ngày). Hệ thống BM25 lấy cả hai đoạn nhưng LLM chưa phân biệt được ngày hiệu lực của phiên bản mới nhất, dẫn đến câu trả lời bị mâu thuẫn hoặc không xác định.
+- **Câu ID 41 (Adversarial):** Reference và tài liệu nghi_phep_nam_v2024.md quy định 15 ngày, thay 12 ngày của v2023. Ba contexts đang lưu lại nói về thử việc/nghỉ không lương/nghỉ ốm, không chứa chính sách phép năm hiện hành; answer là Không tìm thấy. Bằng chứng hiện có hỗ trợ lỗi retrieval thiếu nguồn thích hợp, không chứng minh BM25 đã lấy cả hai phiên bản trong lượt này.
 
 ## Matrix và nhóm yếu nhất
 
@@ -64,3 +64,7 @@ Worst metric xuất hiện nhiều nhất: faithfulness; số câu: 25.
 - Trong nhóm Adversarial, các câu hỏi chứa bẫy xung đột phiên bản (chính sách mật khẩu v1 vs v2, phép năm 2023 vs 2024) và bẫy phủ định ("không được phép làm gì"). Điểm trung bình của nhóm Adversarial đạt 0.6431, cao hơn multi_hop nhưng điểm context_recall vẫn bị kéo xuống (0.5833).
 - Việc điểm Adversarial đạt 0.6431 không đồng nghĩa với việc pipeline đã nhận thức hoàn hảo về version conflict; nguyên nhân là do BM25 vô tình ưu tiên từ khóa của văn bản có mật độ từ ngữ cao hơn.
 - Giới hạn thực nghiệm: Bộ kiểm thử gồm 50 câu hỏi là tập mẫu ban đầu; việc sử dụng mô hình evaluator `gpt-4o-mini` có chi phí rẻ nhưng độ nhạy với ngữ nghĩa tiếng Việt chuyên sâu về chính sách có thể có sai lệch nhất định so với chuyên gia con người.
+
+## Rà soát provenance và diễn giải — Nguyễn Minh Thắng, 12/10/2026
+
+Checker hiện báo stale source hashes của answers_50q.json và test_set_50q.json trong metadata A. Các bảng số đo phía trên được giữ từ artifact nhóm đã lưu, không tự sửa hashes hoặc số để vượt checker. Tuấn cần chạy lại Phase A với source hiện tại hoặc truy lại source gốc và bằng chứng trước khi khai CP1 đã hoàn tất. Diễn giải ID 41 đã chỉnh theo fixture và contexts thật (15 ngày, không phải 14); không đổi số đo RAGAS.
