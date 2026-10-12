@@ -72,7 +72,10 @@ PAIR_QUESTION_IDS = (1, 5, 12, 21, 41)
 
 # --- LLM Judge ---
 GENERATION_MODEL = LLM_MODEL
-JUDGE_MODEL = LLM_MODEL
+# Judge/guard gọi 1 model cố định (không xoay vòng) và cần nhiều request → dùng flash-lite
+# (quota/ngày lớn hơn nhiều so với flash). Ghi đè bằng biến môi trường JUDGE_MODEL nếu cần.
+GEMINI_MIN_INTERVAL_S = 4.5  # ~13 request/phút/model, dưới mức 15 RPM của free tier
+JUDGE_MODEL = os.getenv("JUDGE_MODEL") or ("gemini-3.5-flash-lite" if USE_GEMINI else LLM_MODEL)
 
 # --- Guardrail latency budget ---
 LATENCY_BUDGET_P95_MS = 500  # Full guard target; Task 12 currently measures input guards only.
