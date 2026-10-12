@@ -180,38 +180,32 @@ def bias_report(judge_results: list[JudgeResult]) -> dict:
           "interpretation": str,
         }
     """
-    # TODO: Implement
-    # total = len(judge_results)
-    # if total == 0:
-    #     return {"total_judged": 0, "position_bias_rate": 0.0, "verbosity_bias": 0.0}
-    #
-    # position_bias_count = sum(1 for r in judge_results if not r.position_consistent)
-    # position_bias_rate  = position_bias_count / total
-    #
-    # a_wins_a_longer = sum(
-    #     1 for r in judge_results
-    #     if r.final_winner == "A" and len(r.answer_a) > len(r.answer_b)
-    # )
-    # b_wins_b_longer = sum(
-    #     1 for r in judge_results
-    #     if r.final_winner == "B" and len(r.answer_b) > len(r.answer_a)
-    # )
-    # decisive = sum(1 for r in judge_results if r.final_winner != "tie")
-    # verbosity_bias = (a_wins_a_longer + b_wins_b_longer) / decisive if decisive > 0 else 0.0
-    #
-    # interpretation = ("Position bias cao — nên dùng swap-and-average."
-    #                   if position_bias_rate > 0.3 else "Position bias thấp — judge ổn định.")
-    # return {
-    #     "total_judged": total, "position_bias_rate": round(position_bias_rate, 3),
-    #     "position_bias_count": position_bias_count,
-    #     "verbosity_bias": round(verbosity_bias, 3),
-    #     "verbosity_details": {"a_wins_a_longer": a_wins_a_longer,
-    #                           "b_wins_b_longer": b_wins_b_longer,
-    #                           "total_decisive": decisive},
-    #     "interpretation": interpretation,
-    # }
-    return {"total_judged": 0, "position_bias_rate": 0.0, "verbosity_bias": 0.0,
-            "position_bias_count": 0, "verbosity_details": {}, "interpretation": ""}
+    total = len(judge_results)
+    inconsistent = sum(not row.position_consistent for row in judge_results)
+    a_longer_wins = sum(row.final_winner == "A" and len(row.answer_a) > len(row.answer_b)
+                        for row in judge_results)
+    b_longer_wins = sum(row.final_winner == "B" and len(row.answer_b) > len(row.answer_a)
+                        for row in judge_results)
+    decisive = sum(row.final_winner in ("A", "B") for row in judge_results)
+    position_rate = inconsistent / total if total else 0.0
+    verbosity_rate = (a_longer_wins + b_longer_wins) / decisive if decisive else 0.0
+    interpretation = (
+        f"Position inconsistency: {inconsistent}/{total}. "
+        f"Longer-answer wins: {a_longer_wins + b_longer_wins}/{decisive} decisive cases. "
+        "These small-sample proxies do not establish position or verbosity as the cause; "
+        "inspect correctness and content before drawing conclusions."
+        if total else "No pairwise judgments available; zero rates do not establish absence of bias."
+    )
+    return {
+        "total_judged": total,
+        "position_bias_rate": position_rate,
+        "position_bias_count": inconsistent,
+        "verbosity_bias": verbosity_rate,
+        "verbosity_details": {"a_wins_a_longer": a_longer_wins,
+                              "b_wins_b_longer": b_longer_wins,
+                              "total_decisive": decisive},
+        "interpretation": interpretation,
+    }
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
