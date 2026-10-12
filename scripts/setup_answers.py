@@ -98,6 +98,7 @@ def run_query(q: str, search, reranker, top_k: int, client=None) -> tuple[str, l
             ctx = "\n\n".join(contexts)
             resp = client.chat.completions.create(
                 model=GENERATION_MODEL,
+                reasoning_effort="minimal",
                 messages=[
                     {"role": "system", "content": "Trả lời CHỈ dựa trên context. Nếu không có → nói 'Không tìm thấy.'"},
                     {"role": "user",   "content": f"Context:\n{ctx}\n\nCâu hỏi: {q}"},
