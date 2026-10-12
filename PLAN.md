@@ -53,7 +53,7 @@
 ---
 
 ### ⚡ Luồng 2: Nguyễn Minh Thắng (Phase B: Judge & Bias)
-* [ ] **Bước 1 (Code Phase B trong `src/phase_b_judge.py`):**
+* [x] **Bước 1 (Code Phase B trong `src/phase_b_judge.py`):**
   * Task 5: `pairwise_judge(question, answer_a, answer_b, reference)`:
     * Gửi prompt JSON cho LLM so sánh A vs B theo 3 tiêu chí: accuracy, completeness, conciseness.
     * Trả về JSON: `{"winner": "A"|"B"|"tie", "reasoning": str, "scores": {"A": float, "B": float}}`.
@@ -66,13 +66,16 @@
   * Task 8: `bias_report(judge_results)`:
     * Đo position bias rate (`% cases position_consistent == False`).
     * Đo verbosity bias (`% trường hợp câu dài hơn thắng trong các case decisive`).
-* [ ] **Bước 2 (Kiểm thử & Báo cáo):**
+* [x] **Bước 2 (Kiểm thử & Báo cáo):**
   * Chạy unit test mock: `python -m pytest tests/test_phase_b.py -q`.
   * Sau khi có `answers_50q.json`, chạy live: `python scripts/run_experiments.py --phase b --live` → sinh `artifacts/judge_results.json`.
   * Điền báo cáo `doc/reports/bias_report.md`.
   * *Mục tiêu Bonus:* Đạt Cohen's $\kappa > 0.6$ trên 10 model answers gốc.
 
 ---
+
+
+Kết quả live của Nguyễn Minh Thắng: κ=1.0, 2/5 inconsistent, 3/3 longer winner trong decisive cases; artifact/report đã validate. Các kiểm tra toàn nhóm A/C còn lỗi, xem doc/SUBMISSION_REVIEW.md.
 
 ### 🛡️ Luồng 3: Nguyễn Thị Vàng (Phase C: Guardrails & Latency)
 * [ ] **Bước 1 (Code Phase C trong `src/phase_c_guard.py`):**
