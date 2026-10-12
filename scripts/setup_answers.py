@@ -158,19 +158,19 @@ def main(argv=None):
             "generation_model": generation_model,
         })
         if (i + 1) % 10 == 0:
-            print(f"  [{i+1}/{len(test_set)}] done ({time.time()-t_start:.0f}s elapsed)")
+            print(f"  [{i+1}/{len(test_set)}] done ({time.time()-t_start:.0f}s elapsed)", flush=True)
 
     os.makedirs(os.path.dirname(ANSWERS_PATH), exist_ok=True)
     with open(ANSWERS_PATH, "w", encoding="utf-8") as f:
         json.dump(answers, f, ensure_ascii=False, indent=2)
 
-    print(f"\n✓ Saved {len(answers)} answers → artifacts/answers_50q.json")
-    print(f"  Total time: {time.time()-t_start:.1f}s")
-    print("\n→ Bây giờ bắt đầu Phase A:")
-    print("     python scripts/run_experiments.py --phase a --live")
+    print(f"\n✓ Saved {len(answers)} answers → artifacts/answers_50q.json", flush=True)
+    print(f"  Total time: {time.time()-t_start:.1f}s", flush=True)
+    print("\n→ Bây giờ bắt đầu Phase A:", flush=True)
+    print("     python scripts/run_experiments.py --phase a --live", flush=True)
 
 
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     main()
