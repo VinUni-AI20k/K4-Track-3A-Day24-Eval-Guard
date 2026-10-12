@@ -44,6 +44,15 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 - Giới hạn/cách xử lý: {{Vấn đề và kiểm chứng}}.
 - Nguồn/AI hỗ trợ nếu có: {{Công cụ, phạm vi, cách tự kiểm chứng}}.
 
+### TranAnhQuan-2A202602598
+
+- **Phần được giao và phần thực tế đã làm:** Phụ trách Phase B, Tasks 5–8 trong `src/phase_b_judge.py`: triển khai pairwise judge theo reference, hoán đổi thứ tự và quy đổi winner/scores, tính Cohen’s κ và thống kê position/verbosity bias. Báo cáo kỹ thuật đang chờ kết quả thực nghiệm.
+- **Bằng chứng:** Commit `cdb36d9` triển khai Tasks 5–8; commit `71b14f5` chuyển helper/import vào hàm và tách lời gọi API khỏi xử lý validation. Báo cáo dự kiến tại `doc/reports/bias_report.md`, chưa có số liệu thật.
+- **Cách kiểm tra:** Đã rà soát tĩnh mã nguồn và xác nhận không còn `# TODO`. Chưa xác minh kết quả unit tests. Khi môi trường sẵn sàng, chạy `.\.venv-tests\Scripts\python.exe -m pytest tests/test_phase_b.py -q`; bổ sung kết quả thực tế sau.
+- **Điều đã học:** Phân biệt winner A/B/tie với nhãn chất lượng 0/1; cần quy đổi lượt swap về thứ tự gốc trước khi đối chiếu. κ xét cả đồng thuận quan sát và đồng thuận do ngẫu nhiên; tỷ lệ winner dài hơn chưa chứng minh nguyên nhân thiên lệch.
+- **Giới hạn/cách xử lý:** Chưa có `artifacts/judge_results.json`, nên chưa kết luận κ hoặc bias. Chờ Giang chạy batch thật; dùng kết quả JSON để hoàn thiện báo cáo, không tự điền số hoặc chạy lại nhằm tăng κ.
+- **Nguồn/AI hỗ trợ nếu có:** Sử dụng Codex hỗ trợ lập kế hoạch, rà soát tiến độ và hợp đồng hàm theo tài liệu phân công, đề bài và tests được cấp. Kiểm chứng hiện tại bằng đối chiếu tĩnh; kiểm thử mock và đối chiếu kết quả thật còn chờ thực hiện.
+
 ## Cập nhật sau khi nộp
 
 {{Ghi phiên bản nộp; nếu sửa sau deadline, ghi commit/thời điểm/lý do và thông báo
