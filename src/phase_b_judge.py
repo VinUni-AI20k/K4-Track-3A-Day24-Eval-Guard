@@ -98,35 +98,18 @@ def swap_and_average(question: str, answer_a: str, answer_b: str, reference: str
         Final:   nếu winner_1 == winner_2 → final = winner_1
                  nếu khác nhau → final = "tie"
     """
-    # TODO: Implement
-    # pass1 = pairwise_judge(question, answer_a, answer_b, reference=reference)
-    # pass2_raw = pairwise_judge(question, answer_b, answer_a, reference=reference)  # SWAP!
-    #
-    # # Convert pass2 back to original A/B space
-    # swap_map = {"A": "B", "B": "A", "tie": "tie"}
-    # winner_pass2 = swap_map[pass2_raw["winner"]]
-    #
-    # # Average: consensus only if both agree
-    # if pass1["winner"] == winner_pass2:
-    #     final = pass1["winner"]
-    # else:
-    #     final = "tie"  # disagreement = inconclusive
-    #
-    # position_consistent = (pass1["winner"] == winner_pass2)
-    #
-    # return JudgeResult(
-    #     question=question, answer_a=answer_a, answer_b=answer_b,
-    #     winner_pass1=pass1["winner"], winner_pass2=winner_pass2,
-    #     final_winner=final,
-    #     reasoning_pass1=pass1["reasoning"], reasoning_pass2=pass2_raw["reasoning"],
-    #     position_consistent=position_consistent,
-    #     scores_pass1=pass1["scores"],
-    #     scores_pass2={"A": pass2_raw["scores"]["B"], "B": pass2_raw["scores"]["A"]},
-    # )
+    first = pairwise_judge(question, answer_a, answer_b, reference=reference)
+    second_raw = pairwise_judge(question, answer_b, answer_a, reference=reference)
+    second_winner = {"A": "B", "B": "A", "tie": "tie"}[second_raw["winner"]]
+    consistent = first["winner"] == second_winner
     return JudgeResult(
         question=question, answer_a=answer_a, answer_b=answer_b,
-        winner_pass1="tie", winner_pass2="tie", final_winner="tie",
-        reasoning_pass1="", reasoning_pass2="", position_consistent=True,
+        winner_pass1=first["winner"], winner_pass2=second_winner,
+        final_winner=first["winner"] if consistent else "tie",
+        reasoning_pass1=first["reasoning"], reasoning_pass2=second_raw["reasoning"],
+        position_consistent=consistent,
+        scores_pass1=dict(first["scores"]),
+        scores_pass2={"A": second_raw["scores"]["B"], "B": second_raw["scores"]["A"]},
     )
 
 
