@@ -21,6 +21,7 @@
 ---
 
 ### 1. PHẠM ĐÌNH HẢI (Trưởng nhóm — Setup RAG & Phase A: RAGAS Evaluation)
+- **Nhánh làm việc cá nhân:** `hai-phase-a`
 
 #### A. Nhiệm vụ:
 1. **Thiết lập nền tảng & sinh câu trả lời RAG:**
@@ -79,7 +80,7 @@
 1. **Phạm Đình Hải (Leader):**
    - Push commit phân công công việc lên nhánh `main`.
    - Setup RAG pipeline, sinh `artifacts/answers_50q.json`.
-   - Hoàn thành `phase_a_ragas.py`, commit và push lên nhánh `phase-a` hoặc `main`.
+   - Hoàn thành `phase_a_ragas.py`, commit và push lên nhánh cá nhân `hai-phase-a`.
 2. **Nguyễn Minh Ngọc:**
    - Pull `main` về máy.
    - Hoàn thành `phase_b_judge.py`, chạy test PASS, chạy thực nghiệm live, viết `bias_report.md`.
