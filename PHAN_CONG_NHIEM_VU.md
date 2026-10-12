@@ -2,7 +2,7 @@
 
 **Dự án:** Production Eval + Guardrail Stack  
 **Tên nhóm:** NhomBotVN  
-**Repository:** [https://github.com/haikunn11/K4-Track-3A-Day24-Eval-Guard-NhomBotVN](https://github.com/haikunn11/K4-Track-3A-Day24-Eval-Guard-NhomBotVN)
+**Repository:** [https://github.com/haikunn11/K4-Track-3A-Day24-NhomBotVN-Eval-Guard](https://github.com/haikunn11/K4-Track-3A-Day24-NhomBotVN-Eval-Guard)
 
 ---
 

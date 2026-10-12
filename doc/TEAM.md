@@ -2,7 +2,7 @@
 
 Tên nhóm: NhomBotVN
 
-Repo chung: https://github.com/haikunn11/K4-Track-3A-Day24-Eval-Guard-NhomBotVN
+Repo chung: https://github.com/haikunn11/K4-Track-3A-Day24-NhomBotVN-Eval-Guard
 
 Trưởng nhóm/người nộp: Phạm Đình Hải - 2A202602482
 
