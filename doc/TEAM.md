@@ -46,12 +46,12 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 
 ### NguyenMinhThang-2A202602706
 
-- Phần được giao và phần thực tế đã làm: Phụ trách Phase B gồm Tasks 5-8 trong src/phase_b_judge.py, đo lường position bias, verbosity bias và viết bias_report.md.
-- Bằng chứng: Commits trên Git và file artifacts/judge_results.json, bias_report.md.
-- Cách kiểm tra: python -m pytest tests/test_phase_b.py và python scripts/run_experiments.py --phase b --live.
-- Điều đã học: Hiểu cách LLM-as-a-judge bị bias theo vị trí (position bias), kỹ thuật swap-and-average và hiệu chuẩn nhãn nhị phân với Cohen's kappa.
-- Giới hạn/cách xử lý: Đảm bảo prompt JSON nghiêm ngặt và không leak human labels vào prompt đánh giá.
-- Nguồn/AI hỗ trợ nếu có: Tham khảo tài liệu scikit-learn, OpenAI JSON mode và đề bài.
+- Phần được giao và phần thực tế đã làm: Implement Phase B Tasks 5–8: reference-based JSON judge, swap winner/scores, Cohen κ và position/verbosity proxies. Viết báo cáo trạng thái tại doc/reports/bias_report.md.
+- Bằng chứng: Commit riêng từng task trên feat/phase-b-minh-thang; tests/test_phase_b_edges.py bổ sung kiểm tra biên và runner offline. Chưa có artifacts/judge_results.json từ API.
+- Cách kiểm tra: 42 tests Phase B pass; 102 tests pass khi chạy cùng helper và report contracts bằng Python 3.11 Conda. SDK mock không gọi mạng.
+- Điều đã học: Quy đổi lượt swap về cùng không gian A/B; phân biệt pairwise winner với nhãn binary của đúng model_answer; hiệu chỉnh agreement bằng Cohen κ và diễn giải giới hạn của proxy bias.
+- Giới hạn/cách xử lý: Người dùng để key OpenAI cập nhật sau, nên live judge và số đo κ/bias còn chờ key. Không dùng nhãn human/notes trong prompt, không tạo số đo giả từ mock và không tuyên bố đạt bonus khi chưa chạy API.
+- Nguồn/AI hỗ trợ nếu có: Scaffold, đề bài và rubric của repo; Codex hỗ trợ code Tasks 5–8, kiểm tra song song trường hợp biên và chạy test offline. Người dùng chịu trách nhiệm đọc code và kết quả trước nộp.
 
 ### NguyenThiVang-2A202602897
 
