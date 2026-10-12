@@ -7,9 +7,9 @@
 
 | STT | Thành viên | Vai trò | Trọng tâm phụ trách | File code & báo cáo | Mục tiêu điểm |
 |---|---|---|---|---|---|
-| **1** | **Nguyễn Minh Tuấn** (Lead) | Trưởng nhóm / Phase A Lead | Tích hợp m1–m5, sinh answers 50q, RAGAS Eval | `src/phase_a_ragas.py`<br>`doc/reports/failure_clusters.md` | 30đ + 4đ bonus |
-| **2** | **Nguyễn Minh Thắng** | Core Dev / Phase B Lead | Pairwise LLM Judge, Swap-and-average, Cohen's κ, Bias Report | `src/phase_b_judge.py`<br>`doc/reports/bias_report.md` | 35đ + 3đ bonus |
-| **3** | **Nguyễn Thị Vàng** | Core Dev / Phase C Lead | Presidio PII (VN), NeMo Guardrails In/Out, P95 Latency | `src/phase_c_guard.py`<br>Đóng góp `blueprint.md` | 35đ + 3đ bonus |
+| **1** | **Nguyễn Minh Tuấn** (Lead) | `2A202602420` | Trưởng nhóm / Phase A Lead | Tích hợp m1–m5, sinh answers 50q, RAGAS Eval | `src/phase_a_ragas.py`<br>`doc/reports/failure_clusters.md` | 30đ + 4đ bonus |
+| **2** | **Nguyễn Minh Thắng** | `2A202602706` | Core Dev / Phase B Lead | Pairwise LLM Judge, Swap-and-average, Cohen's κ, Bias Report | `src/phase_b_judge.py`<br>`doc/reports/bias_report.md` | 35đ + 3đ bonus |
+| **3** | **Nguyễn Thị Vàng** | `2A202602897` | Core Dev / Phase C Lead | Presidio PII (VN), NeMo Guardrails In/Out, P95 Latency | `src/phase_c_guard.py`<br>Đóng góp `blueprint.md` | 35đ + 3đ bonus |
 | **ALL** | **Cả nhóm** | Tích hợp & Đóng gói | Đề xuất kiến trúc CI/CD, Quality gates, Monitoring | `doc/reports/blueprint.md`<br>`doc/TEAM.md` | Tổng 100đ + 10đ |
 
 ---

@@ -35,7 +35,7 @@ hoặc pip resolve để khẳng định runtime đã chạy.
 
 Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 
-### NguyenMinhTuan-20240001
+### NguyenMinhTuan-2A202602420
 
 - Phần được giao và phần thực tế đã làm: Phụ trách tích hợp pipeline RAG Day 18, sinh answers_50q.json, hoàn thành Tasks 1-4 trong src/phase_a_ragas.py và viết failure_clusters.md.
 - Bằng chứng: Commits trên Git và file artifacts/ragas_50q.json, failure_clusters.md.
@@ -44,7 +44,7 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 - Giới hạn/cách xử lý: Xử lý ngoại lệ mô hình evaluator m4 trả về và cấu hình timeout khi sinh 50 câu.
 - Nguồn/AI hỗ trợ nếu có: Tham khảo tài liệu RAGAS, đề bài và AI coding assistant để debug cú pháp.
 
-### NguyenMinhThang-20240002
+### NguyenMinhThang-2A202602706
 
 - Phần được giao và phần thực tế đã làm: Phụ trách Phase B gồm Tasks 5-8 trong src/phase_b_judge.py, đo lường position bias, verbosity bias và viết bias_report.md.
 - Bằng chứng: Commits trên Git và file artifacts/judge_results.json, bias_report.md.
@@ -53,7 +53,7 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 - Giới hạn/cách xử lý: Đảm bảo prompt JSON nghiêm ngặt và không leak human labels vào prompt đánh giá.
 - Nguồn/AI hỗ trợ nếu có: Tham khảo tài liệu scikit-learn, OpenAI JSON mode và đề bài.
 
-### NguyenThiVang-20240003
+### NguyenThiVang-2A202602897
 
 - Phần được giao và phần thực tế đã làm: Phụ trách Phase C gồm Tasks 9a-12 trong src/phase_c_guard.py, thiết lập Presidio PII, NeMo input/output rails, chạy adversarial suite và đo P95 latency.
 - Bằng chứng: Commits trên Git và file artifacts/guard_results.json, đóng góp vào blueprint.md.
