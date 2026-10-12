@@ -39,28 +39,28 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 
 - Phần được giao và phần thực tế đã làm: Phase B, file `src\phase_b_judge.py`.
 - Bằng chứng: Commit SHA 4a4e94a4ba0b656775858096d873adf8f6b88b0c
-- Cách kiểm tra: Chạy runner B để tạo 5 cặp/2 lượt cùng 10 binary judgments đúng nguồn.
+- Cách kiểm tra: `python -m pytest tests/ -q`: 86 passed, 3 deselected (integration). Chạy `python scripts/run_experiments.py --phase b --live`; artifact có 5 cặp A/B, 10 binary judgments theo đúng `model_answer`, 10/10 nhãn trùng human labels và Cohen’s κ = 1.0.
 - Điều đã học: Pairwise A/B/tie và nhãn tốt/xấu 0/1 trả lời hai câu hỏi khác nhau. Hoán đổi thứ tự câu trả lời giúp đo mức bất nhất theo vị trí; Cohen’s κ đo mức đồng thuận giữa judge và nhãn người sau khi hiệu chỉnh đồng thuận ngẫu nhiên.
-- Giới hạn/cách xử lý: Phần code Phase B đã hoàn thiện nhưng chưa được kiểm chứng bằng unit mock hoặc API live. Cần chạy tests offline khi môi trường cho phép, sau đó chạy `python scripts/run_experiments.py --phase b --live`, kiểm tra JSON và cập nhật báo cáo bias.
+- Giới hạn/cách xử lý: Chỉ có 5 cặp nên 1/5 (20%) position-inconsistent chưa đủ để kết luận thiên lệch vị trí. Verbosity win rate là 3/4 decisive cases (75%); cần xem nội dung từng cặp và không diễn giải như bằng chứng nhân quả. Calibration κ = 1.0 dựa trên 10 nhãn trong bộ mẫu, không đảm bảo đồng thuận trên dữ liệu rộng hơn.
 - Nguồn/AI hỗ trợ nếu có: Codex hỗ trợ triển khai Tasks 5–8 trong `src/phase_b_judge.py` theo hợp đồng trong README/ASSIGNMENT. Phạm vi gồm pairwise judge, swap-and-average, Cohen’s κ và bias report.
 
 ### TranNhatMinh-2A202602483
 
 - Phần được giao và phần thực tế đã làm: Phase A, file `src\phase_a_ragas.py`, `src\config.py` và bổ sung các file M1-M5 từ pipeline lab.
 - Bằng chứng: Commit SHA fb5a69fc2a47cb156319ce4022a3d5e8d625bf58.
-- Cách kiểm tra: {{Unit mock hoặc live experiment, lệnh và kết quả}}.
-- Điều đã học: {{Khái niệm và cách thể hiện trong bài}}.
-- Giới hạn/cách xử lý: {{Vấn đề và kiểm chứng}}.
-- Nguồn/AI hỗ trợ nếu có: {{Công cụ, phạm vi, cách tự kiểm chứng}}.
+- Cách kiểm tra: `python -m pytest tests/ -q`: 86 passed, 3 deselected (integration). Chạy `python scripts/run_experiments.py --phase a --live` trên 50 câu; trung bình faithfulness 0.855, answer relevancy 0.830, context precision 0.795, context recall 0.805. Kết quả và phân tích bottom 10 được lưu ở `artifacts/ragas_50q.json` và `doc/reports/failure_clusters.md`.
+- Điều đã học: Bốn metric RAGAS đo các khía cạnh khác nhau: độ bám context, mức liên quan câu trả lời, độ chính xác context được lấy và độ phủ ground truth. Phân tích answer cùng contexts giúp phân biệt lỗi retrieval thiếu chunk với lỗi generation dù context đã đủ.
+- Giới hạn/cách xử lý: Đánh giá chỉ gồm 50 câu, trong đó 10 adversarial; hai PDF scan không có text layer nên không được index. Generation xoay vòng 4 model và evaluator dùng nhiều model do quota, nên điểm giữa các câu có thể chịu ảnh hưởng khác model. Khi so sánh cải tiến, cần cố định model và xử lý/index bản PDF có text trước.
+- Nguồn/AI hỗ trợ nếu có: Claude hỗ trợ cho phần này; kết quả được đối chiếu với answers, contexts, ground truth và artifacts của lần chạy live.
 
 ### NguyenLePhucThang-2A202602638
 
 - Phần được giao và phần thực tế đã làm: Phase C, file `src\phase_c_guard.py`.
 - Bằng chứng: Commit SHA 0fca76146c1cfe7aa2d64d19a55ee73a14e7f095.
-- Cách kiểm tra: {{Unit mock hoặc live experiment, lệnh và kết quả}}.
-- Điều đã học: {{Khái niệm và cách thể hiện trong bài}}.
-- Giới hạn/cách xử lý: {{Vấn đề và kiểm chứng}}.
-- Nguồn/AI hỗ trợ nếu có: {{Công cụ, phạm vi, cách tự kiểm chứng}}.
+- Cách kiểm tra: `python -m pytest tests/ -q`: 86 passed, 3 deselected (integration). Chạy `python scripts/run_experiments.py --phase c --live --latency-samples 20`; `artifacts/guard_results.json` ghi attacks 20/20, clean controls 8/8, output cases 4/4. Đo 20 mẫu sau 2 warm-up; input guard p95 = 1237.501 ms.
+- Điều đã học: Guard cần kiểm tra cả input lẫn output, đồng thời dùng clean controls để phát hiện chặn nhầm. Đạt tỷ lệ chặn attacks cao chưa đủ nếu yêu cầu hợp lệ bị chặn; latency cũng là một tiêu chí riêng cần đo sau warm-up.
+- Giới hạn/cách xử lý: Input guard p95 1237.501 ms vượt ngân sách 500 ms dù Presidio p95 chỉ 32.023 ms; thời gian chủ yếu nằm ở NeMo input rail (p95 1198.593 ms). Đây là 20 mẫu trong một lần chạy với model guard `gemini-3.5-flash-lite`; cần đo lại sau tối ưu hoặc đổi cấu hình/model và vẫn xác nhận đủ attacks, clean controls, output cases.
+- Nguồn/AI hỗ trợ nếu có: Claude hỗ trợ cho phần này; kết quả được tự kiểm tra qua artifact JSON, gồm từng case, kết quả pass/fail và thống kê latency.
 
 ## Cập nhật sau khi nộp
 
