@@ -64,13 +64,17 @@ def evaluate_ragas(questions: list[str], answers: list[str],
             "contexts": contexts,
             "ground_truth": ground_truths,
         })
+        from ragas.run_config import RunConfig
+
         eval_llm = ChatOpenAI(model=EVALUATOR_LLM_MODEL)
         eval_embeddings = OpenAIEmbeddings(model=EVALUATOR_EMBEDDING_MODEL)
+        run_config = RunConfig(max_workers=2, max_retries=10, max_wait=60)
         result = evaluate(
             dataset,
             metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
             llm=eval_llm,
             embeddings=eval_embeddings,
+            run_config=run_config,
         )
         df = result.to_pandas()
         per_question = [
