@@ -1,0 +1,164 @@
+from __future__ import annotations
+
+"""
+Shared LLM helper — dùng chung cho M5 enrichment, answer generation và RAGAS judge.
+
+- Disk cache theo nội dung prompt → chạy lại pipeline không tốn thêm request.
+- Xoay vòng model khi gặp 429 hết quota ngày (Gemini free tier giới hạn request/ngày/model).
+- Tự hạ reasoning_effort "none" → "low" cho model không hỗ trợ tắt thinking.
+- Ghi lại model ID thực sự trả lời (kể cả khi lấy từ cache) để m4 báo cáo evaluator_models.
+"""
+
+import hashlib, json, os, sys, threading, time
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import LLM_API_KEY, LLM_MODELS, LLM_REASONING_EFFORT, get_llm_client
+
+CACHE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cache", "llm_cache.json")
+
+_lock = threading.Lock()
+_cache: dict | None = None
+_exhausted: set[str] = set()
+_timeouts: dict[str, int] = {}  # model → số lần timeout; treo liên tục thì bỏ qua
+_effort: dict[str, str | None] = {}  # model → reasoning_effort đang dùng
+_used_models: set[str] = set()       # model IDs đã thực sự sinh ra câu trả lời
+
+
+_last_call: dict[str, float] = {}  # model → thời điểm gọi gần nhất (throttle)
+
+
+def throttle(model: str) -> None:
+    """Giãn cách request cho model gọi cố định (judge/guard) dưới giới hạn request/phút của
+    Gemini free tier (15 RPM với flash-lite). Gọi NGOÀI vùng đo latency. No-op với OpenAI."""
+    from config import USE_GEMINI, GEMINI_MIN_INTERVAL_S
+    if not USE_GEMINI:
+        return
+    with _lock:
+        wait = _last_call.get(model, 0.0) + GEMINI_MIN_INTERVAL_S - time.monotonic()
+    if wait > 0:
+        time.sleep(wait)
+    with _lock:
+        _last_call[model] = time.monotonic()
+
+
+class LLMUnavailable(RuntimeError):
+    """Không còn model nào gọi được (hết quota hoặc chưa có API key)."""
+
+
+def reset_used_models() -> None:
+    with _lock:
+        _used_models.clear()
+
+
+def used_models() -> list[str]:
+    with _lock:
+        return sorted(_used_models)
+
+
+def _load_cache() -> dict:
+    global _cache
+    if _cache is None:
+        try:
+            with open(CACHE_PATH, encoding="utf-8") as f:
+                _cache = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            _cache = {}
+    return _cache
+
+
+def _save_cache() -> None:
+    os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+    tmp = CACHE_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(_cache, f, ensure_ascii=False)
+    os.replace(tmp, CACHE_PATH)
+
+
+def chat(messages: list[dict], max_tokens: int | None = None, json_mode: bool = False,
+         temperature: float = 0.0) -> str:
+    """Chat completion có cache + xoay vòng model. Raise LLMUnavailable nếu không gọi được."""
+    if not LLM_API_KEY:
+        raise LLMUnavailable("Chưa set OPENAI_API_KEY / GEMINI_API_KEY")
+
+    key = hashlib.sha256(json.dumps([messages, max_tokens, json_mode, round(temperature, 3)],
+                                    ensure_ascii=False).encode()).hexdigest()
+    with _lock:
+        cached = _load_cache().get(key)
+        # Chỉ dùng cache có ghi model; entry cũ không rõ model thì gọi lại.
+        if isinstance(cached, dict) and cached.get("model"):
+            _used_models.add(cached["model"])
+            return cached["text"]
+
+    client = get_llm_client().with_options(max_retries=0, timeout=60)
+    for model in LLM_MODELS:
+        if model in _exhausted:
+            continue
+        for attempt in range(6):
+            effort = _effort.get(model, LLM_REASONING_EFFORT)
+            kwargs = {}
+            if effort:
+                kwargs["reasoning_effort"] = effort
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            # Khi model vẫn "thinking", thinking tokens tính vào max_tokens → bỏ giới hạn để không bị cắt.
+            if max_tokens and effort in (None, "none"):
+                kwargs["max_tokens"] = max_tokens
+            try:
+                resp = client.chat.completions.create(model=model, messages=messages,
+                                                      temperature=temperature, **kwargs)
+                text = (resp.choices[0].message.content or "").strip()
+                reported = getattr(resp, "model", None)
+                used = reported.strip() if isinstance(reported, str) and reported.strip() else model
+                with _lock:
+                    _used_models.add(used)
+                    _load_cache()[key] = {"text": text, "model": used}
+                    _save_cache()
+                return text
+            except Exception as e:  # noqa: BLE001 — phân loại lỗi theo status/message
+                msg = str(e)
+                status = getattr(e, "status_code", None)
+                if status == 429 and ("PerDay" in msg or "per day" in msg.lower()):
+                    print(f"  ⚠️  {model}: hết quota ngày → chuyển model khác", flush=True)
+                    _exhausted.add(model)
+                    break
+                if status == 400 and effort == "none":
+                    _effort[model] = "low"  # model không cho tắt thinking
+                    continue
+                if status == 404:
+                    _exhausted.add(model)
+                    break
+                if "timeout" in msg.lower() or "timed out" in msg.lower():
+                    # Model treo: thử model kế tiếp ngay thay vì chờ lại; treo 2 lần thì bỏ hẳn.
+                    _timeouts[model] = _timeouts.get(model, 0) + 1
+                    if _timeouts[model] >= 2:
+                        print(f"  ⚠️  {model}: timeout lặp lại → chuyển model khác", flush=True)
+                        _exhausted.add(model)
+                    break
+                if status in (429, 500, 502, 503, 504):
+                    time.sleep(min(60, 5 * 2 ** attempt))  # rate limit theo phút / lỗi tạm thời
+                    continue
+                raise
+    raise LLMUnavailable(f"Tất cả model đều không khả dụng: {LLM_MODELS}")
+
+
+def make_ragas_llm():
+    """RAGAS LLM judge dùng chung chat() (cache + xoay vòng model, n generations gọi tuần tự)."""
+    import asyncio
+    from langchain_core.outputs import Generation, LLMResult
+    from ragas.llms.base import BaseRagasLLM
+
+    class RotatingRagasLLM(BaseRagasLLM):
+        def generate_text(self, prompt, n=1, temperature=1e-8, stop=None, callbacks=None) -> LLMResult:
+            text = prompt.to_string()
+            gens = []
+            for i in range(n):
+                # i > 0: thêm marker để mỗi generation có cache key riêng (RAGAS cần n câu khác nhau)
+                content = text if i == 0 else f"{text}\n\n(Biến thể #{i + 1})"
+                gens.append(Generation(text=chat([{"role": "user", "content": content}],
+                                                 temperature=temperature or 0.0)))
+            return LLMResult(generations=[gens])
+
+        async def agenerate_text(self, prompt, n=1, temperature=None, stop=None, callbacks=None) -> LLMResult:
+            return await asyncio.to_thread(self.generate_text, prompt, n, temperature or 1e-8, stop, callbacks)
+
+    return RotatingRagasLLM()

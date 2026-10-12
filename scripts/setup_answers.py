@@ -92,20 +92,21 @@ def run_query(q: str, search, reranker, top_k: int, client=None) -> tuple[str, l
 
     if (OPENAI_API_KEY or client is not None) and contexts:
         try:
-            if client is None:
-                from openai import OpenAI
-                client = OpenAI()
             ctx = "\n\n".join(contexts)
-            resp = client.chat.completions.create(
-                model=GENERATION_MODEL,
-                messages=[
-                    {"role": "system", "content": "Trả lời CHỈ dựa trên context. Nếu không có → nói 'Không tìm thấy.'"},
-                    {"role": "user",   "content": f"Context:\n{ctx}\n\nCâu hỏi: {q}"},
-                ],
-            )
-            reported_model = getattr(resp, "model", None)
-            used_model = reported_model if isinstance(reported_model, str) and reported_model.strip() else GENERATION_MODEL
-            return resp.choices[0].message.content, contexts, "llm", used_model
+            messages = [
+                {"role": "system", "content": "Trả lời CHỈ dựa trên context. Nếu không có → nói 'Không tìm thấy.'"},
+                {"role": "user",   "content": f"Context:\n{ctx}\n\nCâu hỏi: {q}"},
+            ]
+            if client is not None:
+                resp = client.chat.completions.create(model=GENERATION_MODEL, messages=messages)
+                reported_model = getattr(resp, "model", None)
+                used_model = reported_model if isinstance(reported_model, str) and reported_model.strip() else GENERATION_MODEL
+                return resp.choices[0].message.content, contexts, "llm", used_model
+            # Gemini free tier giới hạn request/ngày theo từng model → dùng src.llm (cache + xoay vòng model).
+            from src.llm import chat, reset_used_models, used_models
+            reset_used_models()
+            answer = chat(messages)
+            return answer, contexts, "llm", used_models()[0]
         except Exception as e:
             print(f"  ⚠️  LLM generation failed: {e}")
 
@@ -138,11 +139,7 @@ def main(argv=None):
 
     print(f"\nRunning {len(test_set)} queries...")
     answers = []
-    from config import OPENAI_API_KEY
-    client = None
-    if OPENAI_API_KEY:
-        from openai import OpenAI
-        client = OpenAI()
+    client = None  # None → run_query dùng src.llm (xoay vòng model khi hết quota)
     t_start = time.time()
 
     for i, item in enumerate(test_set):
