@@ -62,10 +62,43 @@ def evaluate_ragas(
     from datasets import Dataset
     from langchain_openai import ChatOpenAI, OpenAIEmbeddings
     from ragas import evaluate
-    from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+    from ragas.llms import LangchainLLMWrapper
+    from ragas.metrics import answer_relevancy, context_precision, context_recall
+    from ragas.metrics._faithfulness import Faithfulness
+    from ragas.run_config import RunConfig
 
-    llm = ChatOpenAI(model=RAGAS_LLM_MODEL, temperature=0)
+    # RAGAS 0.1.x passes temperature at call time; GPT-5 nano requires it omitted.
+    gpt5_model = RAGAS_LLM_MODEL.lower().startswith("gpt-5")
+
+    class NoTemperatureChatOpenAI(ChatOpenAI):
+        def _get_request_payload(self, input_, *, stop=None, **kwargs):
+            payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+            payload.pop("temperature", None)
+            return payload
+
+    chat_llm = (
+        NoTemperatureChatOpenAI(model=RAGAS_LLM_MODEL)
+        if gpt5_model
+        else ChatOpenAI(model=RAGAS_LLM_MODEL, temperature=0)
+    )
+    llm = LangchainLLMWrapper(chat_llm)
     embeddings = OpenAIEmbeddings(model=RAGAS_EMBEDDING_MODEL)
+
+    class ShortAnswerSegmenter:
+        def __init__(self, delegate):
+            self.delegate = delegate
+
+        def segment(self, answer: str) -> list[str]:
+            sentences = self.delegate.segment(answer)
+            if any(sentence.strip().endswith(".") for sentence in sentences):
+                return sentences
+            # RAGAS 0.1.x otherwise supplies no statements for short answers.
+            return [answer.strip() + "."] if answer.strip() else sentences
+
+    faithfulness_metric = Faithfulness()
+    faithfulness_metric.sentence_segmenter = ShortAnswerSegmenter(
+        faithfulness_metric.sentence_segmenter
+    )
     dataset = Dataset.from_dict({
         "question": questions,
         "answer": answers,
@@ -74,9 +107,10 @@ def evaluate_ragas(
     })
     result = evaluate(
         dataset,
-        metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+        metrics=[faithfulness_metric, answer_relevancy, context_precision, context_recall],
         llm=llm,
         embeddings=embeddings,
+        run_config=RunConfig(timeout=600, max_workers=8, max_retries=3),
         raise_exceptions=True,
     )
     frame = result.to_pandas()
