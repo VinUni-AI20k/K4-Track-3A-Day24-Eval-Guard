@@ -19,7 +19,7 @@ Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải
 |---|---|---|---|---|
 | 1 | Phạm Đình Hải | 2A202602482 | Trưởng nhóm, Setup Pipeline Day 18, Phase A (RAGAS) | Nhánh `hai-phase-a` (Commit src/phase_a_ragas.py, failure_clusters.md, artifacts/ragas_50q.json) |
 | 2 | Nguyễn Minh Ngọc | 20240002 | Thành viên, Phase B (LLM Judge & Bias Calibration) | Commit src/phase_b_judge.py, bias_report.md, artifacts/judge_results.json |
-| 3 | Nguyễn Văn Đại | 20240003 | Thành viên, Phase C (Guardrails Stack & Latency) | Commit src/phase_c_guard.py, blueprint.md, artifacts/guard_results.json |
+| 3 | Nguyễn Văn Đại | 20240003 | Thành viên, Phase C (Guardrails Stack & Latency) | Nhánh `dai-phase-c` (Commit src/phase_c_guard.py, blueprint.md, artifacts/guard_results.json) |
 
 Người tích hợp/chạy batch/nộp link: Phạm Đình Hải, chạy check_lab.py và nộp link qua vlearn.
 
@@ -55,7 +55,7 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 ### NguyenVanDai-20240003
 
 - Phần được giao và phần thực tế đã làm: Phụ trách Phase C (Production Guardrails, Presidio PII scanning, NeMo input/output rails, adversarial suite và đo P95 latency trong src/phase_c_guard.py).
-- Bằng chứng: Commit mã nguồn src/phase_c_guard.py, file artifacts/guard_results.json và báo cáo doc/reports/blueprint.md.
+- Bằng chứng: Nhánh làm việc cá nhân `dai-phase-c`. Commit mã nguồn src/phase_c_guard.py, file artifacts/guard_results.json và báo cáo doc/reports/blueprint.md.
 - Cách kiểm tra: Chạy unit test offline pytest tests/test_phase_c.py và thực nghiệm live python scripts/run_experiments.py --phase c --live --latency-samples 20.
 - Điều đã học: Triển khai lá chắn bảo vệ hai đầu với Microsoft Presidio và NeMo Guardrails, cân bằng giữa tỷ lệ chặn tấn công và kiểm soát false-positive, đo lường độ trễ P95 tuần tự.
 - Giới hạn/cách xử lý: Tối ưu regex cho PII tiếng Việt (CCCD, SĐT) và xử lý event loop async trong NeMo Guardrails.

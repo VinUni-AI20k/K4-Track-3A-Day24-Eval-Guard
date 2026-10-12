@@ -58,6 +58,7 @@
 ---
 
 ### 3. NGUYỄN VĂN ĐẠI (Thành viên — Phase C: Guardrails Stack & P95 Latency)
+- **Nhánh làm việc cá nhân:** `dai-phase-c`
 
 #### A. Nhiệm vụ:
 1. **Hiện thực 5 hàm TODO trong `src/phase_c_guard.py`:**
@@ -88,7 +89,7 @@
 3. **Nguyễn Văn Đại:**
    - Pull `main` về máy.
    - Hoàn thành `phase_c_guard.py`, chạy test PASS, chạy thực nghiệm live, viết `blueprint.md`.
-   - Commit và push bằng tài khoản của Đại.
+   - Commit và push bằng tài khoản của Đại lên nhánh cá nhân `dai-phase-c`.
 4. **Kiểm tra cuối cùng:**
    - Cả 3 cùng xem lại `doc/TEAM.md`, điền đúng MSSV thật của mình.
    - Chạy `python scripts/check_lab.py --with-tests` để đảm bảo hệ thống chấm PASS 100%.
