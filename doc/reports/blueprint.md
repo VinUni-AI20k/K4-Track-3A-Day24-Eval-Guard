@@ -1,60 +1,46 @@
-# Blueprint CI/CD cho RAG và guardrails
+# Blueprint CI/CD cho RAG va guardrails
 
-Nhóm: {{Tên nhóm}}
+Nhom: NhomBotVN
+Nguoi phu trach: Nguyen Van Dai (MSSV: 2A202602477) - Nhanh lam viec: dai-phase-c
 
-Người phụ trách: {{Họ tên và MSSV}}
+Day la de xuat CI/CD, chua phai workflow da trien khai. Nguon ket qua la ba artifact trong `artifacts/`; model IDs va timestamp phai lay tu metadata live run, khong suy dien khi artifact chua co.
 
-Đây là **đề xuất CI/CD**, không phải workflow đã được triển khai/chạy.
-Nguồn kết quả: artifacts/ragas_50q.json, judge_results.json, guard_results.json.
-Run timestamp: {{created_at}}; guard models: {{metadata.models.guard}}.
-Models generation/evaluator/judge từ A/B: {{models theo từng vai trò và nguồn report}}.
+## Kien truc va failure action
 
-## Kiến trúc và failure action
+Input -> Presidio -> NeMo input -> RAG -> NeMo output -> response.
 
-Input → Presidio → NeMo input → RAG → NeMo output → response.
-Request thực dừng sớm khi bị chặn; khác phép đo input layers chạy đủ hai tầng.
+Presidio phat hien/anonymize PII truoc khi chuyen tiep; NeMo input rail chan jailbreak/off-topic. Request dung som khi bi chan. Output rail redaction cau tra loi nhay cam. Log chi ghi request id, category va rail decision, khong ghi plaintext PII. Secrets chi qua bien moi truong; fallback extractive chi dung khi generation that bai.
 
-{{Mô tả data flow, failure action, log/redact, nơi giữ secrets và điều kiện fallback.}}
+## Pham vi va so do latency
 
-## Phạm vi và số đo latency
+Task 12 co scope `input_layers_sequential`: Presidio + NeMo input, khong short-circuit; engine tao truoc do, 2 warm-up that, percentile noi suy tuyen tinh, tong `input_guard_ms` tinh tu tung sample. So lieu duoc do truc tiep tu live run va ghi nhan trong `artifacts/guard_results.json`.
 
-Bắt buộc Task 12: **input_layers_sequential**, Presidio + NeMo input, không
-short-circuit. Engines tạo trước đo; có hai warm-up thật không tính vào mẫu.
-Percentile nội suy tuyến tính từ raw samples; tổng từ tổng từng sample.
+| Layer / scope | P50 ms | P95 ms | P99 ms | Trang thai |
+|---|---:|---:|---:|---|
+| Presidio | 7.22 | 8.28 | 10.23 | Da do (live) |
+| NeMo input | 630.92 | 741.45 | 908.10 | Da do (live) |
+| Input guard sequential | 637.88 | 749.10 | 915.23 | Da do (live) |
+| RAG | chua do | chua do | chua do | Ngoai pham vi bat buoc |
+| NeMo output | chua do | chua do | chua do | Ngoai pham vi bat buoc |
+| Full guard / short-circuit request | chua do | chua do | chua do | Khong suy tu input_guard_ms |
 
-Số mẫu timed: {{n_samples}}; warm-up: {{warmup_runs}};
-phương pháp: {{percentile_method}}.
+Budget input-layer la 500 ms. So do thuc te P95 dat 749.10 ms (Presidio 8.28 ms, NeMo input 741.45 ms). Phan lon do tre tap trung o tang NeMo input goi API gpt-4o-mini qua mang internet (~600-700ms round-trip). Presidio cuc bo cuc ky nhanh (<9ms P95). De toi uu duoi 500ms: can cache intent cho cac cau hoi pho bien, hoac dung model small local (vLLM on-premise) thay vi goi cloud API. RAG/output/full request can phep do rieng.
 
-| Layer / scope | P50 ms | P95 ms | P99 ms | Tình trạng |
-|---|---|---|---|---|
-| Presidio | {{p50}} | {{p95}} | {{p99}} | {{Kết quả đo Task 12}} |
-| NeMo input | {{p50}} | {{p95}} | {{p99}} | {{Kết quả đo Task 12}} |
-| Input guard sequential | {{p50}} | {{p95}} | {{p99}} | {{Kết quả đo Task 12}} |
-| RAG | chưa đo | chưa đo | chưa đo | Ngoài phạm vi bắt buộc |
-| NeMo output | chưa đo | chưa đo | chưa đo | Ngoài phạm vi bắt buộc |
-| Full guard / short-circuit request | chưa đo | chưa đo | chưa đo | Không suy từ input_guard_ms |
+## CI gates de xuat
 
-Input-layer budget target: 500ms; kết quả thực tế/budget_ok: {{giá trị và bool}}.
-{{Nêu bottleneck nếu vượt target. Nếu chưa đo các phần ngoài phạm vi, giữ “chưa đo”
-và nêu kế hoạch lấy mẫu/warm-up/timestamps; nếu đã đo thì thay bằng số và phương pháp.}}
+- RAGAS faithfulness >= 0.75 va avg_score >= 0.65 tren 50 cau.
+- Attacks >= 18/20, clean 8/8 allowed, output cases dung.
+- Full guard P95 < 500 ms chi ap dung sau khi do full guard that.
+- Lab gate bat buoc: attacks >= 15/20 va clean 8/8; script tra non-zero khi khong dat.
 
-## CI gates đề xuất
+Workflow nay la de xuat, chua duoc trien khai trong repo.
 
-- RAGAS faithfulness ≥0.75, avg_score ≥0.65 trên 50 câu.
-- Attacks ≥18/20 cho CI đề xuất; clean 8/8 allowed; output cases đúng.
-- Full guard P95 <500ms chỉ áp dụng sau khi thực sự đo full guard.
+## Monitoring va cai tien
 
-Mốc bắt buộc lab vẫn attacks ≥15/20; bonus ≥18/20 kèm clean controls đạt.
-{{Đề xuất lệnh job và cách script trả nonzero khi không đạt. MIN_* là biến đề
-xuất, không tự làm quality gate nếu runner chưa kiểm tra ngưỡng. Ghi rõ workflow
-chưa triển khai, hoặc dẫn bằng chứng nếu nhóm thực sự đã triển khai.}}
+Theo doi attack pass rate, clean false-positive rate, output flags, P95 input latency va drift theo category. Alert khi clean < 8/8, attack < 18/20 hoac P95 >= 500 ms. Redact PII trong log; sampling dung request id. Gioi han mau hien tai la 50/20/8/4 theo artifact.
 
-## Monitoring và cải tiến
+RAGAS mean/worst distribution: xem `artifacts/ragas_50q.json`.
+Cohen's kappa: xem `artifacts/judge_results.json`.
+Attacks passed va clean false-positive rate: xem `artifacts/guard_results.json`.
 
-{{Nêu metric, ngưỡng cảnh báo, cách lấy samples, xử lý false positives, drift,
-privacy và người xử lý. Dùng kết quả thật và ghi giới hạn của bộ 50/20/8/4.}}
-
-RAGAS mean/worst distribution: {{giá trị}}.
-Cohen’s κ: {{giá trị}}.
-Attacks passed: {{số lượng}}/20; clean false_positive_rate: {{giá trị}}.
-{{Nêu 3–5 câu cải tiến có thể kiểm tra, gắn với bằng chứng của nhóm.}}
+Cai tien: bo sung attack variants theo drift; benchmark Presidio/NeMo theo release; ra soat false positives tren clean controls; kiem tra output redaction tren 4 cases; tang mau latency khi thay doi model.
