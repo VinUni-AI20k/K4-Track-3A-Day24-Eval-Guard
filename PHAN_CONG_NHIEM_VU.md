@@ -2,7 +2,7 @@
 
 **Dự án:** Production Eval + Guardrail Stack  
 **Tên nhóm:** NhomBotVN  
-**Repository:** [https://github.com/haikunn11/K4-Track-3A-Day24-Eval-Guard-NhomBotVN](https://github.com/haikunn11/K4-Track-3A-Day24-Eval-Guard-NhomBotVN)
+**Repository:** [https://github.com/haikunn11/K4-Track-3A-Day24-NhomBotVN-Eval-Guard](https://github.com/haikunn11/K4-Track-3A-Day24-NhomBotVN-Eval-Guard)
 
 ---
 
@@ -12,7 +12,7 @@
 |---|---|---|---|---|---|---|
 | 1 | **Phạm Đình Hải** | Trưởng nhóm | Setup Pipeline Day 18 & **Phase A** (RAGAS Evaluation) | `src/phase_a_ragas.py`<br>*(+ chép `m1–m5`)* | `artifacts/answers_50q.json`<br>`artifacts/ragas_50q.json` | `doc/reports/failure_clusters.md`<br>+ `doc/TEAM.md` |
 | 2 | **Nguyễn Minh Ngọc** | Thành viên | **Phase B** (LLM-as-a-Judge & Bias Calibration) | `src/phase_b_judge.py` | `artifacts/judge_results.json` | `doc/reports/bias_report.md` |
-| 3 | **Nguyễn Văn Đại** | Thành viên | **Phase C** (Guardrails Stack & P95 Latency) | `src/phase_c_guard.py` | `artifacts/guard_results.json` | `doc/reports/blueprint.md` |
+| 3 | **Nguyễn Văn Đại**<br>(MSSV: 2A202602477) | Thành viên | **Phase C** (Guardrails Stack & P95 Latency) | `src/phase_c_guard.py` | `artifacts/guard_results.json` | `doc/reports/blueprint.md` |
 
 ---
 
@@ -21,6 +21,7 @@
 ---
 
 ### 1. PHẠM ĐÌNH HẢI (Trưởng nhóm — Setup RAG & Phase A: RAGAS Evaluation)
+- **Nhánh làm việc cá nhân:** `hai-phase-a`
 
 #### A. Nhiệm vụ:
 1. **Thiết lập nền tảng & sinh câu trả lời RAG:**
@@ -56,7 +57,8 @@
 
 ---
 
-### 3. NGUYỄN VĂN ĐẠI (Thành viên — Phase C: Guardrails Stack & P95 Latency)
+### 3. NGUYỄN VĂN ĐẠI (MSSV: 2A202602477 — Phase C: Guardrails Stack & P95 Latency)
+- **Nhánh làm việc cá nhân:** `dai-phase-c`
 
 #### A. Nhiệm vụ:
 1. **Hiện thực 5 hàm TODO trong `src/phase_c_guard.py`:**
@@ -79,7 +81,7 @@
 1. **Phạm Đình Hải (Leader):**
    - Push commit phân công công việc lên nhánh `main`.
    - Setup RAG pipeline, sinh `artifacts/answers_50q.json`.
-   - Hoàn thành `phase_a_ragas.py`, commit và push lên nhánh `phase-a` hoặc `main`.
+   - Hoàn thành `phase_a_ragas.py`, commit và push lên nhánh cá nhân `hai-phase-a`.
 2. **Nguyễn Minh Ngọc:**
    - Pull `main` về máy.
    - Hoàn thành `phase_b_judge.py`, chạy test PASS, chạy thực nghiệm live, viết `bias_report.md`.
@@ -87,7 +89,7 @@
 3. **Nguyễn Văn Đại:**
    - Pull `main` về máy.
    - Hoàn thành `phase_c_guard.py`, chạy test PASS, chạy thực nghiệm live, viết `blueprint.md`.
-   - Commit và push bằng tài khoản của Đại.
+   - Commit và push bằng tài khoản của Đại lên nhánh cá nhân `dai-phase-c`.
 4. **Kiểm tra cuối cùng:**
    - Cả 3 cùng xem lại `doc/TEAM.md`, điền đúng MSSV thật của mình.
    - Chạy `python scripts/check_lab.py --with-tests` để đảm bảo hệ thống chấm PASS 100%.
