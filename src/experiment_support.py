@@ -109,7 +109,9 @@ def judge_binary(question, answer, reference, *, client=None):
     """Provided bridge to 0/1 calibration. Never accepts human_label/human_note."""
     if client is None:
         from openai import OpenAI
-        client = OpenAI()
+        client = OpenAI(max_retries=8)  # free tier giới hạn request/phút
+        from src.llm import throttle
+        throttle(JUDGE_MODEL)
     response = client.chat.completions.create(
         model=JUDGE_MODEL, temperature=0,
         response_format={"type": "json_object"},

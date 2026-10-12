@@ -19,8 +19,26 @@ CACHE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 _lock = threading.Lock()
 _cache: dict | None = None
 _exhausted: set[str] = set()
+_timeouts: dict[str, int] = {}  # model → số lần timeout; treo liên tục thì bỏ qua
 _effort: dict[str, str | None] = {}  # model → reasoning_effort đang dùng
 _used_models: set[str] = set()       # model IDs đã thực sự sinh ra câu trả lời
+
+
+_last_call: dict[str, float] = {}  # model → thời điểm gọi gần nhất (throttle)
+
+
+def throttle(model: str) -> None:
+    """Giãn cách request cho model gọi cố định (judge/guard) dưới giới hạn request/phút của
+    Gemini free tier (15 RPM với flash-lite). Gọi NGOÀI vùng đo latency. No-op với OpenAI."""
+    from config import USE_GEMINI, GEMINI_MIN_INTERVAL_S
+    if not USE_GEMINI:
+        return
+    with _lock:
+        wait = _last_call.get(model, 0.0) + GEMINI_MIN_INTERVAL_S - time.monotonic()
+    if wait > 0:
+        time.sleep(wait)
+    with _lock:
+        _last_call[model] = time.monotonic()
 
 
 class LLMUnavailable(RuntimeError):
@@ -71,7 +89,7 @@ def chat(messages: list[dict], max_tokens: int | None = None, json_mode: bool = 
             _used_models.add(cached["model"])
             return cached["text"]
 
-    client = get_llm_client().with_options(max_retries=0, timeout=120)
+    client = get_llm_client().with_options(max_retries=0, timeout=60)
     for model in LLM_MODELS:
         if model in _exhausted:
             continue
@@ -109,7 +127,14 @@ def chat(messages: list[dict], max_tokens: int | None = None, json_mode: bool = 
                 if status == 404:
                     _exhausted.add(model)
                     break
-                if status in (429, 500, 502, 503, 504) or "timeout" in msg.lower():
+                if "timeout" in msg.lower() or "timed out" in msg.lower():
+                    # Model treo: thử model kế tiếp ngay thay vì chờ lại; treo 2 lần thì bỏ hẳn.
+                    _timeouts[model] = _timeouts.get(model, 0) + 1
+                    if _timeouts[model] >= 2:
+                        print(f"  ⚠️  {model}: timeout lặp lại → chuyển model khác", flush=True)
+                        _exhausted.add(model)
+                    break
+                if status in (429, 500, 502, 503, 504):
                     time.sleep(min(60, 5 * 2 ** attempt))  # rate limit theo phút / lỗi tạm thời
                     continue
                 raise
