@@ -2,7 +2,7 @@
 
 Nhóm: ThienBinh
 
-Người phụ trách: {{Họ tên và MSSV}}
+Người phụ trách: Trần Quốc Bảo Long - 2A202602696
 
 Nguồn: `artifacts/ragas_50q.json`; run timestamp: 2026-10-12T14:30:49.653526+00:00 (21:30 UTC+07).
 Generation mode/fallback và điều kiện chạy: 50/50 answers `generation_mode = "llm"`, không có

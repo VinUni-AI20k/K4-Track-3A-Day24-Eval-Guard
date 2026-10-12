@@ -2,7 +2,7 @@
 
 Nhóm: ThienBinh
 
-Người phụ trách: {{Họ tên và MSSV}}
+Người phụ trách: Trần Quốc Bảo Long - 2A202602696
 
 Nguồn: `artifacts/judge_results.json`; run timestamp: 2026-10-12T14:53:31.250071+00:00 (21:53 UTC+07).
 Models generation/judge: generation (candidate A, từ answers_50q.json) = `gemini-3.5-flash-lite`,
