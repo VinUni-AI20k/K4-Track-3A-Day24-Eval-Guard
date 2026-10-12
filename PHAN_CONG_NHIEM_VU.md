@@ -12,7 +12,7 @@
 |---|---|---|---|---|---|---|
 | 1 | **Phạm Đình Hải** | Trưởng nhóm | Setup Pipeline Day 18 & **Phase A** (RAGAS Evaluation) | `src/phase_a_ragas.py`<br>*(+ chép `m1–m5`)* | `artifacts/answers_50q.json`<br>`artifacts/ragas_50q.json` | `doc/reports/failure_clusters.md`<br>+ `doc/TEAM.md` |
 | 2 | **Nguyễn Minh Ngọc** | Thành viên | **Phase B** (LLM-as-a-Judge & Bias Calibration) | `src/phase_b_judge.py` | `artifacts/judge_results.json` | `doc/reports/bias_report.md` |
-| 3 | **Nguyễn Văn Đại** | Thành viên | **Phase C** (Guardrails Stack & P95 Latency) | `src/phase_c_guard.py` | `artifacts/guard_results.json` | `doc/reports/blueprint.md` |
+| 3 | **Nguyễn Văn Đại**<br>(MSSV: 2A202602477) | Thành viên | **Phase C** (Guardrails Stack & P95 Latency) | `src/phase_c_guard.py` | `artifacts/guard_results.json` | `doc/reports/blueprint.md` |
 
 ---
 
@@ -57,7 +57,7 @@
 
 ---
 
-### 3. NGUYỄN VĂN ĐẠI (Thành viên — Phase C: Guardrails Stack & P95 Latency)
+### 3. NGUYỄN VĂN ĐẠI (MSSV: 2A202602477 — Phase C: Guardrails Stack & P95 Latency)
 - **Nhánh làm việc cá nhân:** `dai-phase-c`
 
 #### A. Nhiệm vụ:

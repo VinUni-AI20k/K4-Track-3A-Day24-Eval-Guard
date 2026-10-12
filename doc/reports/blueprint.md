@@ -1,7 +1,7 @@
 # Blueprint CI/CD cho RAG va guardrails
 
 Nhom: NhomBotVN
-Nguoi phu trach: Nguyen Van Dai (MSSV: 20240003) - Nhanh lam viec: dai-phase-c
+Nguoi phu trach: Nguyen Van Dai (MSSV: 2A202602477) - Nhanh lam viec: dai-phase-c
 
 Day la de xuat CI/CD, chua phai workflow da trien khai. Nguon ket qua la ba artifact trong `artifacts/`; model IDs va timestamp phai lay tu metadata live run, khong suy dien khi artifact chua co.
 
