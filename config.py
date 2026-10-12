@@ -9,6 +9,32 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 HF_TOKEN = os.getenv("HF_TOKEN", "")  # Optional: for HuggingFace models
 
+# --- LLM provider (OpenAI-compatible) ---
+# Gemini dùng qua endpoint OpenAI-compatible: đặt OPENAI_API_KEY=<Gemini key> và
+# OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/ trong .env.
+# OpenAI SDK tự đọc OPENAI_BASE_URL, nên setup/judge/NeMo đều trỏ cùng provider.
+LLM_API_KEY = OPENAI_API_KEY
+LLM_BASE_URL = os.getenv("OPENAI_BASE_URL") or None
+USE_GEMINI = bool(LLM_BASE_URL and "generativelanguage.googleapis.com" in LLM_BASE_URL)
+if USE_GEMINI:
+    # Free tier giới hạn request/ngày theo TỪNG model → src/llm.py xoay vòng khi model hết quota.
+    LLM_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
+                  "gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite",
+                  "gemini-flash-lite-latest"]
+    LLM_REASONING_EFFORT = "none"  # tắt thinking: nhanh hơn, không ăn max_tokens
+    EVAL_EMBEDDING_MODEL = "gemini-embedding-001"
+else:
+    LLM_MODELS = ["gpt-4o-mini"]
+    LLM_REASONING_EFFORT = None
+    EVAL_EMBEDDING_MODEL = "text-embedding-3-small"
+LLM_MODEL = LLM_MODELS[0]
+
+
+def get_llm_client():
+    """OpenAI SDK client trỏ tới provider đang cấu hình (OpenAI hoặc Gemini)."""
+    from openai import OpenAI
+    return OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL, max_retries=6)
+
 # --- Qdrant (same as Day 18) ---
 QDRANT_HOST = "localhost"
 QDRANT_PORT = 6333
@@ -45,8 +71,8 @@ GUARDRAILS_CONFIG_DIR = os.path.join(ROOT_DIR, "guardrails")
 PAIR_QUESTION_IDS = (1, 5, 12, 21, 41)
 
 # --- LLM Judge ---
-GENERATION_MODEL = "gpt-4o-mini"
-JUDGE_MODEL = "gpt-4o-mini"
+GENERATION_MODEL = LLM_MODEL
+JUDGE_MODEL = LLM_MODEL
 
 # --- Guardrail latency budget ---
 LATENCY_BUDGET_P95_MS = 500  # Full guard target; Task 12 currently measures input guards only.
