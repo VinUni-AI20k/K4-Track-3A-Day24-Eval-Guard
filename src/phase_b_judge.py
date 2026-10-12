@@ -139,8 +139,20 @@ def cohen_kappa(judge_labels: list[int], human_labels: list[int]) -> float:
         κ = (p_o - p_e) / (1 - p_e) if p_e != 1 else 0
         return κ
     """
-    # TODO: Implement
-    return 0.0
+    if len(judge_labels) != len(human_labels):
+        raise ValueError("Judge and human labels must have equal lengths")
+    if any(type(label) is not int or label not in (0, 1)
+           for label in judge_labels + human_labels):
+        raise ValueError("Calibration labels must be integer 0 or 1")
+    n = len(judge_labels)
+    if not n:
+        return 0.0
+    observed = sum(j == h for j, h in zip(judge_labels, human_labels)) / n
+    expected = sum(judge_labels.count(label) * human_labels.count(label)
+                   for label in (0, 1)) / (n * n)
+    # A single unanimous class has no chance-corrected discrimination.
+    # Use the lab's explicit finite convention instead of NaN.
+    return (observed - expected) / (1 - expected) if expected != 1 else 0.0
 
 
 # ─── Task 8: Bias Report ──────────────────────────────────────────────────────
