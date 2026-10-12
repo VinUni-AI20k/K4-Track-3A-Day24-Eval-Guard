@@ -49,6 +49,10 @@ def setup_presidio():
     return analyzer, anonymizer
 
 
+_NOISY_PII_ENTITIES = {"PERSON", "LOCATION", "NRP", "DATE_TIME", "URL"}
+PII_SCORE_THRESHOLD = 0.5
+
+
 def pii_scan(text: str, analyzer=None, anonymizer=None) -> dict:
     """Task 9a: Quét PII trong văn bản bằng Presidio.
 
@@ -63,6 +67,10 @@ def pii_scan(text: str, analyzer=None, anonymizer=None) -> dict:
         analyzer, anonymizer = setup_presidio()
 
     results = analyzer.analyze(text=text, language=PRESIDIO_LANGUAGE)
+    # NER tiếng Anh (spaCy en) gắn nhầm PERSON/LOCATION/NRP/DATE_TIME cho cụm từ tiếng Việt
+    # ("bao nhiêu", "Xin lỗi"...) → chặn nhầm câu hỏi hợp lệ. Chỉ giữ PII dạng pattern, đủ tin cậy.
+    results = [r for r in results
+               if r.entity_type not in _NOISY_PII_ENTITIES and r.score >= PII_SCORE_THRESHOLD]
     if not results:
         return {"has_pii": False, "entities": [], "anonymized": text}
 
@@ -86,7 +94,14 @@ def setup_nemo_rails():
     """
     from nemoguardrails import RailsConfig, LLMRails
     config = RailsConfig.from_path(GUARDRAILS_CONFIG_DIR)
-    rails  = LLMRails(config)
+    main = next((m for m in config.models if m.type == "main"), None)
+    # NeMo 0.10 chỉ coi model tên "gpt-3.5"/"gpt-4" là chat model; model khác (vd Gemini qua
+    # endpoint OpenAI-compatible) bị gọi /completions → 404. Truyền ChatOpenAI trực tiếp.
+    if main and main.engine == "openai" and "gpt-" not in main.model:
+        from langchain_openai import ChatOpenAI
+        rails = LLMRails(config, llm=ChatOpenAI(model=main.model, temperature=0, max_retries=10))  # chờ qua giới hạn request/phút
+    else:
+        rails = LLMRails(config)
     return rails
 
 
@@ -134,6 +149,7 @@ async def check_output_rail(question: str, answer: str, rails=None) -> dict:
     if rails is None:
         rails = setup_nemo_rails()
 
+    _pace(rails)
     # Cung cấp context đầy đủ để output rail hoạt động
     result = await rails.generate_async(
         messages=[
@@ -152,6 +168,15 @@ async def check_output_rail(question: str, answer: str, rails=None) -> dict:
 
 
 # ─── Task 10: Adversarial Test Suite ─────────────────────────────────────────
+
+def _pace(rails) -> None:
+    """Giãn cách request NeMo dưới giới hạn request/phút; bỏ qua với rails giả trong unit test."""
+    main = next((m for m in getattr(getattr(rails, "config", None), "models", None) or []
+                 if getattr(m, "type", None) == "main"), None)
+    if main is not None:
+        from src.llm import throttle
+        throttle(main.model)
+
 
 def run_adversarial_suite(adversarial_set: list[dict], rails=None,
                            analyzer=None, anonymizer=None) -> list[dict]:
@@ -186,6 +211,7 @@ def run_adversarial_suite(adversarial_set: list[dict], rails=None,
 
             # Layer 2: NeMo input rail (async — await, không dùng asyncio.run())
             if blocked_by is None:
+                _pace(rails)
                 rail_result = await check_input_rail(item["input"], rails)
                 if not rail_result["allowed"]:
                     blocked_by = "nemo_input"
@@ -232,10 +258,12 @@ def measure_p95_latency(test_inputs: list[str], n_runs: int = 20,
         for i in range(2):
             text = test_inputs[i % len(test_inputs)]
             pii_scan(text, analyzer, anonymizer)
+            _pace(rails)
             await check_input_rail(text, rails)
         samples = []
         for i in range(n_runs):
             text = test_inputs[i % len(test_inputs)]
+            _pace(rails)  # chờ rate limit NGOÀI vùng bấm giờ
             t0 = time.perf_counter()
             pii_scan(text, analyzer, anonymizer)
             pii_ms = (time.perf_counter() - t0) * 1000
