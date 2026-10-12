@@ -59,7 +59,18 @@ def pii_scan(text: str, analyzer=None, anonymizer=None) -> dict:
           "anonymized": str,   # text với PII được thay bằng <TYPE>
         }
     """
-    # TODO: Implement
+    if analyzer is None or anonymizer is None:
+        analyzer, anonymizer = setup_presidio()
+    raw_results = analyzer.analyze(text=text, language=PRESIDIO_LANGUAGE)
+    target_types = {"VN_CCCD", "VN_PHONE", "EMAIL_ADDRESS", "PHONE_NUMBER"}
+    results = [r for r in raw_results if getattr(r, "entity_type", "") in target_types]
+    if not results:
+        return {"has_pii": False, "entities": [], "anonymized": text}
+    entities = [{"type": r.entity_type, "text": text[r.start:r.end],
+                 "score": round(float(r.score), 3), "start": r.start, "end": r.end}
+                for r in results]
+    anonymized = anonymizer.anonymize(text=text, analyzer_results=results).text
+    return {"has_pii": True, "entities": entities, "anonymized": anonymized}
     # if analyzer is None or anonymizer is None:
     #     analyzer, anonymizer = setup_presidio()
     #
@@ -102,7 +113,7 @@ async def check_input_rail(text: str, rails=None) -> dict:
           "response":       str,          # NeMo's raw response
         }
     """
-    # TODO: Implement
+    # Implementation complete
     # if rails is None:
     #     rails = setup_nemo_rails()
     #
@@ -118,7 +129,14 @@ async def check_input_rail(text: str, rails=None) -> dict:
     #     "blocked_reason": "nemo_input_rail" if blocked else None,
     #     "response":       response,
     # }
-    return {"allowed": True, "blocked_reason": None, "response": ""}
+    if rails is None:
+        rails = setup_nemo_rails()
+    result = await rails.generate_async(messages=[{"role": "user", "content": text}],
+        options={"rails": ["input"], "log": {"activated_rails": True}})
+    response = result.response[0]["content"]
+    blocked = any(rail.stop for rail in result.log.activated_rails)
+    return {"allowed": not blocked, "blocked_reason": "nemo_input_rail" if blocked else None,
+            "response": response}
 
 
 async def check_output_rail(question: str, answer: str, rails=None) -> dict:
@@ -135,7 +153,7 @@ async def check_output_rail(question: str, answer: str, rails=None) -> dict:
           "final_answer":   str,          # answer đã qua guard (có thể bị redact)
         }
     """
-    # TODO: Implement
+    # Implementation complete
     # if rails is None:
     #     rails = setup_nemo_rails()
     #
@@ -154,7 +172,15 @@ async def check_output_rail(question: str, answer: str, rails=None) -> dict:
     #     "flagged_reason": "nemo_output_rail" if flagged else None,
     #     "final_answer":   response if flagged else answer,
     # }
-    return {"safe": True, "flagged_reason": None, "final_answer": answer}
+    if rails is None:
+        rails = setup_nemo_rails()
+    result = await rails.generate_async(
+        messages=[{"role": "user", "content": question}, {"role": "assistant", "content": answer}],
+        options={"rails": ["output"], "log": {"activated_rails": True}})
+    response = result.response[0]["content"]
+    flagged = any(rail.stop for rail in result.log.activated_rails)
+    return {"safe": not flagged, "flagged_reason": "nemo_output_rail" if flagged else None,
+            "final_answer": response}
 
 
 # ─── Task 10: Adversarial Test Suite ─────────────────────────────────────────
@@ -176,7 +202,24 @@ def run_adversarial_suite(adversarial_set: list[dict], rails=None,
           "passed": bool,
         }
     """
-    # TODO: Implement
+    if analyzer is None or anonymizer is None:
+        analyzer, anonymizer = setup_presidio()
+    if rails is None:
+        rails = setup_nemo_rails()
+    async def _run_all():
+        rows = []
+        for item in adversarial_set:
+            blocked_by = None
+            if pii_scan(item["input"], analyzer, anonymizer)["has_pii"]:
+                blocked_by = "presidio"
+            if blocked_by is None and not (await check_input_rail(item["input"], rails))["allowed"]:
+                blocked_by = "nemo_input"
+            actual = "blocked" if blocked_by else "allowed"
+            rows.append({"id": item["id"], "category": item["category"], "input": item["input"],
+                         "expected": item["expected"], "actual": actual, "blocked_by": blocked_by,
+                         "passed": actual == item["expected"]})
+        return rows
+    return asyncio.run(_run_all())
     # if analyzer is None or anonymizer is None:
     #     analyzer, anonymizer = setup_presidio()
     # if rails is None:
@@ -229,7 +272,29 @@ def measure_p95_latency(test_inputs: list[str], n_runs: int = 20,
     percentiles at (n - 1) * q. Submission requires n_runs >= 20.
     Short-circuit request timing, RAG and output timing are outside this scope.
     """
-    # TODO: Implement sample collection (the statistics helper is provided).
+    from src.experiment_support import summarize_latency
+    if not test_inputs or n_runs < 1:
+        raise ValueError("Need inputs and n_runs >= 1")
+    if analyzer is None or anonymizer is None:
+        analyzer, anonymizer = setup_presidio()
+    if rails is None:
+        rails = setup_nemo_rails()
+    async def _measure():
+        for i in range(2):
+            text = test_inputs[i % len(test_inputs)]
+            pii_scan(text, analyzer, anonymizer)
+            await check_input_rail(text, rails)
+        samples = []
+        for i in range(n_runs):
+            text = test_inputs[i % len(test_inputs)]
+            t0 = time.perf_counter(); pii_scan(text, analyzer, anonymizer)
+            pii_ms = (time.perf_counter() - t0) * 1000
+            t1 = time.perf_counter(); await check_input_rail(text, rails)
+            nemo_ms = (time.perf_counter() - t1) * 1000
+            samples.append({"presidio_ms": pii_ms, "nemo_input_ms": nemo_ms,
+                            "input_guard_ms": pii_ms + nemo_ms})
+        return samples
+    return summarize_latency(asyncio.run(_measure()), warmup_runs=2)
     # from src.experiment_support import summarize_latency
     # if not test_inputs or n_runs < 1:
     #     raise ValueError("Need inputs and n_runs >= 1")
